@@ -250,7 +250,16 @@ function setupOsc(oscPortIn, oscPortOut) {
     let macIP = '192.168.0.230';
     
     let tunnel = 'https://bankroll-threefold-tartness.ngrok-free.dev';
-    var socket = io.connect(tunnel, { rememberTransport: false });
+    var socket = io.connect(tunnel, { 
+        rememberTransport: false,
+        transportOptions: {
+            polling: {
+                extraHeaders: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            }
+        }
+     });
 
     socket.on('connect', function() {
         socket.emit('config', { 
