@@ -1,3 +1,5 @@
+const DEV = false;
+
 let img;
 let imgWidth, imgHeight;
 let thresh = 20;
@@ -12,7 +14,7 @@ let colors = [
     {r: 255, g: 100, b: 100},
 ];
 
-const circleRadius = 70;
+let circleRadius = 70;
 let show = true;
 
 let creating = false;
@@ -26,6 +28,13 @@ let mouseParticles = [];
 let oscPort;
 let port = 8081;
 
+let fileIn;
+let slider;
+
+
+const post = DEV? ((v) => print('/values ' + v)) : ((v) => sendOsc('/values', v));
+
+
 
 function preload() {
     img = loadImage('drawing.png');
@@ -33,8 +42,14 @@ function preload() {
 
 function setup() {
     createCanvas(800, 600);
-    setupOsc(4443, 4444);
-
+    let fileIn = document.createElement('input');
+    fileIn.type = 'file';
+    document.body.appendChild(fileIn);
+    fileIn.addEventListener("change", loadShapes);
+    slider = createSlider(10, 150);
+    
+    if (!DEV)
+        setupOsc(4443, 4444);
 
 
     // setup text
@@ -43,7 +58,9 @@ function setup() {
 }
 
 function draw() {
-    let mp = createVector(mouseX, mouseY);
+
+    circleRadius = slider.value();
+    print(slider.value);
 
     if (img == null) {
         background(0);
@@ -55,21 +72,8 @@ function draw() {
     image(img, 0, 0, width, height);
     
     paintMouse();
+    overlap();
 
-    let m = [];
-    for (let i = 0; i < shapes.length; i++) {
-        let shape = shapes[i];
-        if (shape.filled) {
-            let per = getOverlapPercentage(shape.points, mp, circleRadius, 50);
-            if (per > 0)
-                m.push(i, per);
-        }
-    }
-    sendOsc('/values', m);
-
-    noFill();
-    stroke(255);
-    circle(mouseX, mouseY, circleRadius * 2);
 
     if (shapes.length == 0 || !show)
         return;
@@ -80,7 +84,8 @@ function draw() {
 
 function mousePressed() {
     let mp = createVector(mouseX, mouseY);
-    
+    if (mp.x < 0 || mp.y < 0 || mp.x > width || mp.y > height)
+        return;
 
     if (!show) {
         mouseDown = true;
@@ -122,14 +127,52 @@ function mousePressed() {
 }
 
 
+function overlap() {
+    
+    if (show) {
+        noFill();
+        stroke(255);
+        strokeWeight(2);
+        circle(mouseX, mouseY, circleRadius * 2);
+    }
+
+    if (show || !mouseDown)
+        return;
+
+    let mp = createVector(mouseX, mouseY);
+
+    let m = [];
+    for (let i = 0; i < shapes.length; i++) {
+        let shape = shapes[i];
+        if (shape.filled) {
+            let per = getOverlapPercentage(shape.points, mp, circleRadius, 50);
+            if (per > 0)
+                m.push(i, per);
+        }
+    }
+
+    post(m);
+}
+
+
 function keyPressed(e) {
+    switch (key) {
+        case 'h':
+            show = !show;
+            break;
+        case 's':
+            saveShapes();
+            break;
+        case 'l':
+            loadShapes();
+            break;
+    }
     if (key == 'h')
-        show = !show;
+    mouseDown = false;
 }
 
 function mouseReleased() {
-    if (!show)
-        mouseDown = false;
+    mouseDown = false;
 }
 
 
@@ -171,8 +214,11 @@ function paintShapes() {
         fill(0);
         stroke(255);
         let sum = createVector(0);
-        for (let point of currentShape.points)
-            sum = sum.add(point);
+        for (let point of currentShape.points) {
+            sum = sum.add(createVector(point.x, point.y));
+        }
+
+
         sum = sum.div(currentShape.points.length);
 
         text(i, sum.x, sum.y);
@@ -274,7 +320,44 @@ function setupOsc(oscPortIn, oscPortOut) {
 }
 
 function sendOsc(address, value) {
-  if (window.socket && window.socket.connected) {
-    window.socket.emit('message', [address].concat(value));
-  }
+    if (window.socket && window.socket.connected) {
+        window.socket.emit('message', [address].concat(value));
+    }
+}
+
+function saveShapes() {
+    let text = JSON.stringify(shapes);
+    let file = new Blob([text], {type: 'text/JSON'});
+
+    if (window.navigator.msSaveOrOpenBlob)
+        window.navigator.msSaveOrOpenBlob(file, 'shapes.json');
+    else {
+        let a = document.createElement('a');
+        let url = URL.createObjectURL(file);
+        a.href = url;
+        a.download = 'shapes.json';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 5);
+    }
+}
+
+function loadShapes(event) {
+    const file = event.target.files[0];
+    if (!file)
+        return;
+
+    const reader = new FileReader();
+    reader.readAsText(file);
+    reader.onload = () => {
+        shapes = JSON.parse(reader.result);
+        currentShapeIdx = shapes.length;
+        print(shapes);
+        print(currentShapeIdx);
+
+        creating = false;
+    }
 }
