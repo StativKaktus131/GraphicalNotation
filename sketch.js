@@ -246,7 +246,11 @@ function getOverlapPercentage(poly, circlePos, radius, resolution = 20) {
 
 // Add these to the absolute bottom of your sketch.js file
 function setupOsc(oscPortIn, oscPortOut) {
-
+    if (typeof io === 'undefined') {
+        console.error("Socket.io CDN is still downloading or blocked! Retrying in 1 second...");
+        setTimeout(() => setupOsc(oscPortIn, oscPortOut), 1000);
+        return;
+    }
     let macIP = '192.168.0.230';
     var socket = io.connect('http://' + macIP + ':8081', { port: 8081, rememberTransport: false });
 
