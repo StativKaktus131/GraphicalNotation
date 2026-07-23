@@ -1,4 +1,4 @@
-const DEV = false;
+const DEV = true;
 
 let img;
 let imgWidth, imgHeight;
@@ -146,8 +146,11 @@ function overlap() {
         let shape = shapes[i];
         if (shape.filled) {
             let per = getOverlapPercentage(shape.points, mp, circleRadius, 50);
-            if (per > 0)
+            if (per > 0) {
                 m.push(i, per);
+            } else {
+                m.push(i, 0.0);
+            }
         }
     }
 
