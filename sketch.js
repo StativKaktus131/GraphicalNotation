@@ -291,7 +291,7 @@ function getOverlapPercentage(poly, circlePos, radius, resolution = 20) {
     let insidePoints = 0;
     let totalPoints = 0;
 
-    if (playheadPlaying) {
+    if (!playheadPlaying) {
         let minX = circlePos.x - radius;
         let minY = circlePos.y - radius;
         let maxX = circlePos.x + radius;
