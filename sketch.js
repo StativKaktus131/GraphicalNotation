@@ -31,6 +31,10 @@ let port = 8081;
 let fileIn;
 let slider;
 
+let playheadPlaying = false;
+let playheadSpeed = 0.0003;
+let playhead = 0;
+
 
 const post = DEV? ((v) => print('/values ' + v)) : ((v) => sendOsc('/values', v));
 
@@ -60,7 +64,6 @@ function setup() {
 function draw() {
 
     circleRadius = slider.value();
-    print(slider.value);
 
     if (img == null) {
         background(0);
@@ -71,6 +74,14 @@ function draw() {
     
     image(img, 0, 0, width, height);
     
+    if (playheadPlaying) {
+        print(playhead);
+        let x = playhead * width;
+        stroke(255, 0, 0);
+        strokeWeight(2);
+        line(x, 0, x, height);
+    }
+
     paintMouse();
     overlap();
 
@@ -129,6 +140,14 @@ function mousePressed() {
 
 function overlap() {
     
+    if (playheadPlaying) {
+        playhead += playheadSpeed;
+        if (playhead > 1.) {
+            playhead = 0;
+            playheadPlaying = false;
+        }
+    }
+
     if (show) {
         noFill();
         stroke(255);
@@ -141,7 +160,10 @@ function overlap() {
 
     let mp = createVector(mouseX, mouseY);
 
+
+    
     let m = [];
+    
     for (let i = 0; i < shapes.length; i++) {
         let shape = shapes[i];
         if (shape.filled) {
@@ -168,6 +190,11 @@ function keyPressed(e) {
             break;
         case 'l':
             loadShapes();
+            break;
+        case ' ':
+            print(" space ");
+            playheadPlaying = true;
+            playhead = 0;
             break;
     }
     if (key == 'h')
@@ -262,34 +289,44 @@ function isPointInPoly(pt, poly) {
 
 function getOverlapPercentage(poly, circlePos, radius, resolution = 20) {
     let insidePoints = 0;
-    let totalCirclePoints = 0;
+    let totalPoints = 0;
 
-    let minX = circlePos.x - radius;
-    let minY = circlePos.y - radius;
-    let maxX = circlePos.x + radius;
-    let maxY = circlePos.y + radius;
+    if (playheadPlaying) {
+        let minX = circlePos.x - radius;
+        let minY = circlePos.y - radius;
+        let maxX = circlePos.x + radius;
+        let maxY = circlePos.y + radius;
 
-    let stepX = (maxX - minX) / resolution;
-    let stepY = (maxY - minY) / resolution;
+        let stepX = (maxX - minX) / resolution;
+        let stepY = (maxY - minY) / resolution;
 
 
-    for (let x = minX + stepX / 2; x < maxX; x += stepX) {
-        for (let y = minY + stepY / 2; y < maxY; y += stepY) {
-            let dx = x - circlePos.x;
-            let dy = y - circlePos.y;
+        for (let x = minX + stepX / 2; x < maxX; x += stepX) {
+            for (let y = minY + stepY / 2; y < maxY; y += stepY) {
+                let dx = x - circlePos.x;
+                let dy = y - circlePos.y;
 
-            if (dx * dx + dy * dy <= radius * radius) {
-                totalCirclePoints++;
+                if (dx * dx + dy * dy <= radius * radius) {
+                    totalPoints++;
 
-                if (isPointInPoly(createVector(x, y), poly)) {
-                    insidePoints++;
+                    if (isPointInPoly(createVector(x, y), poly)) {
+                        insidePoints++;
+                    }
                 }
+            }
+        }
+    } else {
+        let x = playhead * width;
+        for (let y = 0; y < height; y += height / 30) {
+            totalPoints++;
+            if (isPointInPoly(createVector(x, y), poly)) {
+                insidePoints++;
             }
         }
     }
 
-    if (totalCirclePoints == 0) return 0;
-    return (insidePoints * 1. / totalCirclePoints);
+    if (totalPoints == 0) return 0;
+    return (insidePoints * 1. / totalPoints);
 }
 
 
