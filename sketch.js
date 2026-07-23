@@ -291,36 +291,26 @@ function getOverlapPercentage(poly, circlePos, radius, resolution = 20) {
     let insidePoints = 0;
     let totalPoints = 0;
 
-    if (!playheadPlaying) {
-        let minX = circlePos.x - radius;
-        let minY = circlePos.y - radius;
-        let maxX = circlePos.x + radius;
-        let maxY = circlePos.y + radius;
+    let minX = circlePos.x - radius;
+    let minY = circlePos.y - radius;
+    let maxX = circlePos.x + radius;
+    let maxY = circlePos.y + radius;
 
-        let stepX = (maxX - minX) / resolution;
-        let stepY = (maxY - minY) / resolution;
+    let stepX = (maxX - minX) / resolution;
+    let stepY = (maxY - minY) / resolution;
 
 
-        for (let x = minX + stepX / 2; x < maxX; x += stepX) {
-            for (let y = minY + stepY / 2; y < maxY; y += stepY) {
-                let dx = x - circlePos.x;
-                let dy = y - circlePos.y;
+    for (let x = minX + stepX / 2; x < maxX; x += stepX) {
+        for (let y = minY + stepY / 2; y < maxY; y += stepY) {
+            let dx = x - circlePos.x;
+            let dy = y - circlePos.y;
 
-                if (dx * dx + dy * dy <= radius * radius) {
-                    totalPoints++;
+            if (dx * dx + dy * dy <= radius * radius) {
+                totalPoints++;
 
-                    if (isPointInPoly(createVector(x, y), poly)) {
-                        insidePoints++;
-                    }
+                if (isPointInPoly(createVector(x, y), poly)) {
+                    insidePoints++;
                 }
-            }
-        }
-    } else {
-        let x = playhead * width;
-        for (let y = 0; y < height; y += height / 30) {
-            totalPoints++;
-            if (isPointInPoly(createVector(x, y), poly)) {
-                insidePoints++;
             }
         }
     }
