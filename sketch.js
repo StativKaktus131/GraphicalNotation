@@ -1,4 +1,4 @@
-const DEV = false;
+const DEV = false; // kinda weird
 
 let img;
 let imgWidth, imgHeight;
