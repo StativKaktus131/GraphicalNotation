@@ -35,6 +35,8 @@ let playheadPlaying = false;
 let playheadSpeed = 0.0003;
 let playhead = 0;
 
+let btn;
+
 
 const post = DEV? ((v) => print('/values ' + v)) : ((v) => sendOsc('/values', v));
 
@@ -51,6 +53,11 @@ function setup() {
     document.body.appendChild(fileIn);
     fileIn.addEventListener("change", loadShapes);
     slider = createSlider(10, 150);
+
+    btn = createButton("toggle hide");
+    btn.mousePressed(() => {
+        show = !show;
+    });
     
     if (!DEV)
         setupOsc(4443, 4444);
